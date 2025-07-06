@@ -40,13 +40,13 @@
   </style>
 </head>
 <body>
-  <h2>Your Transaction History</h2>
+  <h2>Transaction History</h2>
   <div class="transaction-list" id="transactionList">Loading...</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, getDocs, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtCfsMkc_Z_9ZeF0TEHTDFBzLlkU-egSc",
@@ -65,7 +65,7 @@
 
     onAuthStateChanged(auth, async user => {
       if (!user) {
-        transactionList.innerHTML = "<p>Please <a href='index.html' style='color:#295FFF;'>log in</a> to view your transactions.</p>";
+        transactionList.innerHTML = "<p>Please <a href='login.html' style='color:#295FFF;'>log in</a> to view your transactions.</p>";
         return;
       }
 
@@ -73,32 +73,35 @@
       const q = query(transactionsRef, orderBy("timestamp", "desc"));
 
       try {
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          transactionList.innerHTML = "<p>No transactions found.</p>";
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          transactionList.innerHTML = "<p>No transactions yet.</p>";
           return;
         }
 
-        transactionList.innerHTML = ""; // Clear
+        let shown = false;
+        transactionList.innerHTML = "";
 
-        querySnapshot.forEach(doc => {
+        snapshot.forEach(doc => {
           const t = doc.data();
-          const date = t.timestamp?.toDate().toLocaleString();
-          const amount = parseFloat(t.amount).toFixed(2);
-          const type = t.type || "Transaction";
-          const source = t.source || "Unknown";
-          const note = t.note || "";
+          const type = t.type?.toLowerCase();
+          if (type !== "deposit" && type !== "withdraw") return;
 
           const item = document.createElement("div");
-          item.className = `transaction ${type.toLowerCase() === "withdraw" ? "withdraw" : ""}`;
+          item.className = `transaction ${type === "withdraw" ? "withdraw" : ""}`;
           item.innerHTML = `
-            <strong>${type}</strong> of <strong>${amount}</strong><br>
-            <small>By: ${source}</small><br>
-            <small>Date: ${date}</small><br>
-            ${note ? `<small>Note: ${note}</small>` : ""}
+            <strong>${t.type}</strong><br>
+            <small>Amount: ${parseFloat(t.amount).toFixed(2)}</small><br>
+            <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
           `;
           transactionList.appendChild(item);
+          shown = true;
         });
+
+        if (!shown) {
+          transactionList.innerHTML = "<p>No transactions yet.</p>";
+        }
+
       } catch (err) {
         console.error("Error loading transactions:", err);
         transactionList.innerHTML = "<p>Failed to load transactions.</p>";
