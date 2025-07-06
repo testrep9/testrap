@@ -137,7 +137,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtCfsMkc_Z_9ZeF0TEHTDFBzLlkU-egSc",
@@ -216,8 +216,17 @@
 
           await setDoc(doc(db, "users", uid), userData);
 
+          // ✅ Create a welcome transaction in 'transactions' subcollection
+          await addDoc(collection(doc(db, "users", uid), "transactions"), {
+            type: "Deposit",
+            amount: 0,
+            source: "System",
+            timestamp: serverTimestamp(),
+            note: "Account created"
+          });
+
           // Store in localStorage
-          localStorage.setItem("uid", uid);               // ✅ Store UID
+          localStorage.setItem("uid", uid);
           localStorage.setItem("username", username);
           localStorage.setItem("balance", 0);
           localStorage.setItem("currency", currency);
@@ -255,7 +264,7 @@
           }
 
           const userData = docSnap.data();
-          localStorage.setItem("uid", uid);               // ✅ Store UID
+          localStorage.setItem("uid", uid);
           localStorage.setItem("username", userData.username);
           localStorage.setItem("balance", userData.balance);
           localStorage.setItem("currency", userData.currency);
