@@ -367,22 +367,35 @@
     confirmBtn.addEventListener('click', async () => {
       if (!confirmBtn.classList.contains('active')) return;
 
-      // !!! WARNING !!! This "admin authorization code" is highly insecure.
-      // For production, this should be handled on a secure backend (e.g., Firebase Cloud Function).
-      // Client-side prompt for sensitive authorization is a major security vulnerability.
-      const code = prompt("Enter admin authorization code:");
-      if (!code) { // User clicked cancel
+      // --- START OF CLIENT-SIDE PIN VERIFICATION (LESS SECURE) ---
+      const enteredPin = prompt("Enter authorization pin:");
+      if (!enteredPin) { // User clicked cancel
           alert("Authorization cancelled.");
           return;
       }
-      const codeDocRef = doc(db, "settings", "authCode");
-      const codeDocSnap = await getDoc(codeDocRef);
-      const validCode = codeDocSnap.exists() ? codeDocSnap.data().code : null;
 
-      if (code !== validCode) {
-        alert("Invalid authorization code.");
-        return;
+      try {
+          const authCodeDocRef = doc(db, "settings", "authCode"); // Path to your pin document
+          const authCodeDocSnap = await getDoc(authCodeDocRef);
+
+          if (!authCodeDocSnap.exists()) {
+              alert("Admin authorization code not found. Please contact support.");
+              return;
+          }
+
+          const validPin = authCodeDocSnap.data().code; // Get the code from Firestore
+
+          if (enteredPin !== validPin) {
+              alert("Invalid authorization pin.");
+              return;
+          }
+      } catch (error) {
+          console.error("Error fetching or verifying pin:", error);
+          alert("An error occurred during pin verification. Please try again.");
+          return;
       }
+      // --- END OF CLIENT-SIDE PIN VERIFICATION ---
+
 
       const bankDetails = {
         userId,
