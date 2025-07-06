@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Transaction History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .transaction-list {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .transaction {
+      background-color: #111;
+      border-left: 5px solid #295FFF;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+    }
+
+    .transaction.withdraw {
+      border-left-color: red;
+    }
+
+    .transaction small {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h2>Your Transaction History</h2>
+  <div class="transaction-list" id="transactionList">Loading...</div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, getDocs, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtCfsMkc_Z_9ZeF0TEHTDFBzLlkU-egSc",
+      authDomain: "tradevanta-a3e0d.firebaseapp.com",
+      projectId: "tradevanta-a3e0d",
+      storageBucket: "tradevanta-a3e0d.appspot.com",
+      messagingSenderId: "441098922985",
+      appId: "1:441098922985:web:163878a0ef5b2054f8b978"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const transactionList = document.getElementById("transactionList");
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        transactionList.innerHTML = "<p>Please <a href='index.html' style='color:#295FFF;'>log in</a> to view your transactions.</p>";
+        return;
+      }
+
+      const transactionsRef = collection(db, "users", user.uid, "transactions");
+      const q = query(transactionsRef, orderBy("timestamp", "desc"));
+
+      try {
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          transactionList.innerHTML = "<p>No transactions found.</p>";
+          return;
+        }
+
+        transactionList.innerHTML = ""; // Clear
+
+        querySnapshot.forEach(doc => {
+          const t = doc.data();
+          const date = t.timestamp?.toDate().toLocaleString();
+          const amount = parseFloat(t.amount).toFixed(2);
+          const type = t.type || "Transaction";
+          const source = t.source || "Unknown";
+          const note = t.note || "";
+
+          const item = document.createElement("div");
+          item.className = `transaction ${type.toLowerCase() === "withdraw" ? "withdraw" : ""}`;
+          item.innerHTML = `
+            <strong>${type}</strong> of <strong>${amount}</strong><br>
+            <small>By: ${source}</small><br>
+            <small>Date: ${date}</small><br>
+            ${note ? `<small>Note: ${note}</small>` : ""}
+          `;
+          transactionList.appendChild(item);
+        });
+      } catch (err) {
+        console.error("Error loading transactions:", err);
+        transactionList.innerHTML = "<p>Failed to load transactions.</p>";
+      }
+    });
+  </script>
+</body>
+</html>
