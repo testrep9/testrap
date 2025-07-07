@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Transaction History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     body {
       background-color: #000;
@@ -133,11 +134,11 @@
             : (t.status?.toLowerCase() || "pending");
 
           const statusLabel = {
-            completed: "✅ Completed",
-            pending: "🕒 Pending",
-            processing: "🔄 Processing",
-            canceled: "❌ Canceled"
-          }[status] || "🕒 Pending";
+  completed: `<i class="fas fa-check-circle" style="color:#00c853;"></i> Completed`,
+  pending: `<i class="fas fa-hourglass-half" style="color:#ffab00;"></i> Pending`,
+  processing: `<i class="fas fa-sync-alt" style="color:#2979ff;"></i> Processing`,
+  canceled: `<i class="fas fa-times-circle" style="color:#d50000;"></i> Canceled`
+}[status] || `<i class="fas fa-hourglass-half" style="color:#ffab00;"></i> Pending`;
 
           const statusClass = `status ${status}`;
 
@@ -149,7 +150,7 @@
             <div><strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong></div>
             <div class="amount ${type}">${sign} ${currency} ${amount.toFixed(2)}</div>
             <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
-            <div class="${statusClass}">${statusLabel}</div>
+            <div class="${statusClass}" innerHTML="${statusLabel}"></div>
           `;
           transactionList.appendChild(item);
         });
