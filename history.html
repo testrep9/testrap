@@ -60,7 +60,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtCfsMkc_Z_9ZeF0TEHTDFBzLlkU-egSc",
@@ -83,11 +83,17 @@
         return;
       }
 
-      const transactionsRef = collection(db, "users", user.uid, "transactions");
-      const q = query(transactionsRef, orderBy("timestamp", "desc"));
-
       try {
+        // Get user's currency from their profile
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        const userCurrency = userDocSnap.exists() && userDocSnap.data().currency ? userDocSnap.data().currency : "USD";
+
+        // Fetch transactions
+        const transactionsRef = collection(db, "users", user.uid, "transactions");
+        const q = query(transactionsRef, orderBy("timestamp", "desc"));
         const snapshot = await getDocs(q);
+
         if (snapshot.empty) {
           transactionList.innerHTML = "<p>No transactions yet.</p>";
           return;
@@ -101,14 +107,13 @@
           if (type !== "deposit" && type !== "withdraw") return;
 
           const amount = parseFloat(t.amount).toFixed(2);
-          const currency = t.currency || "USD"; // Default to USD if not set
           const sign = type === "deposit" ? "+" : "−";
 
           const item = document.createElement("div");
           item.className = `transaction ${type}`;
           item.innerHTML = `
             <div><strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong></div>
-            <div class="amount ${type}">${sign} ${currency} ${amount}</div>
+            <div class="amount ${type}">${sign} ${userCurrency} ${amount}</div>
             <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
           `;
           transactionList.appendChild(item);
