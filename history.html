@@ -134,24 +134,26 @@
             : (t.status?.toLowerCase() || "pending");
 
           const statusLabel = {
-  completed: `<i class="fas fa-check-circle" style="color:#00c853;"></i> Completed`,
-  pending: `<i class="fas fa-hourglass-half" style="color:#ffab00;"></i> Pending`,
-  processing: `<i class="fas fa-sync-alt" style="color:#2979ff;"></i> Processing`,
-  canceled: `<i class="fas fa-times-circle" style="color:#d50000;"></i> Canceled`
-}[status] || `<i class="fas fa-hourglass-half" style="color:#ffab00;"></i> Pending`;
+            completed: `<i class="fas fa-check-circle"></i> Completed`,
+            pending: `<i class="fas fa-hourglass-half"></i> Pending`,
+            processing: `<i class="fas fa-sync-alt"></i> Processing`,
+            canceled: `<i class="fas fa-times-circle"></i> Canceled`
+          }[status] || `<i class="fas fa-hourglass-half"></i> Pending`;
 
           const statusClass = `status ${status}`;
-
-          const sign = type === "deposit" ? "+" : "−";
 
           const item = document.createElement("div");
           item.className = `transaction ${type}`;
           item.innerHTML = `
             <div><strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong></div>
-            <div class="amount ${type}">${sign} ${currency} ${amount.toFixed(2)}</div>
+            <div class="amount ${type}">${type === "deposit" ? "+" : "−"} ${currency} ${amount.toFixed(2)}</div>
             <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
-            <div class="${statusClass}" innerHTML="${statusLabel}"></div>
+            <div class="${statusClass}"></div>
           `;
+
+          // Set the icon and label inside the status div properly
+          item.querySelector(`.${statusClass.replace(" ", ".")}`).innerHTML = statusLabel;
+
           transactionList.appendChild(item);
         });
 
