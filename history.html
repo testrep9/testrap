@@ -39,13 +39,35 @@
     }
 
     .amount.deposit {
-      color: #00c853; /* Green */
+      color: #00c853;
       font-weight: bold;
     }
 
     .amount.withdraw {
-      color: #d50000; /* Red */
+      color: #d50000;
       font-weight: bold;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .status.completed {
+      color: #00c853;
+    }
+
+    .status.pending {
+      color: #ffab00;
+    }
+
+    .status.processing {
+      color: #2979ff;
+    }
+
+    .status.canceled {
+      color: #d50000;
     }
 
     .transaction small {
@@ -84,12 +106,9 @@
       }
 
       try {
-        // Get user's currency from their profile
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        const userCurrency = userDocSnap.exists() && userDocSnap.data().currency ? userDocSnap.data().currency : "USD";
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const currency = userDoc.exists() ? userDoc.data().currency || "USD" : "USD";
 
-        // Fetch transactions
         const transactionsRef = collection(db, "users", user.uid, "transactions");
         const q = query(transactionsRef, orderBy("timestamp", "desc"));
         const snapshot = await getDocs(q);
@@ -104,17 +123,33 @@
         snapshot.forEach(doc => {
           const t = doc.data();
           const type = t.type?.toLowerCase();
-          if (type !== "deposit" && type !== "withdraw") return;
+          if (!["deposit", "withdraw"].includes(type)) return;
 
-          const amount = parseFloat(t.amount).toFixed(2);
+          const amount = parseFloat(t.amount);
+          if (amount === 0) return; // Skip zero transactions
+
+          const status = (type === "deposit") 
+            ? "completed" 
+            : (t.status?.toLowerCase() || "pending");
+
+          const statusLabel = {
+            completed: "✅ Completed",
+            pending: "🕒 Pending",
+            processing: "🔄 Processing",
+            canceled: "❌ Canceled"
+          }[status] || "🕒 Pending";
+
+          const statusClass = `status ${status}`;
+
           const sign = type === "deposit" ? "+" : "−";
 
           const item = document.createElement("div");
           item.className = `transaction ${type}`;
           item.innerHTML = `
             <div><strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong></div>
-            <div class="amount ${type}">${sign} ${userCurrency} ${amount}</div>
+            <div class="amount ${type}">${sign} ${currency} ${amount.toFixed(2)}</div>
             <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
+            <div class="${statusClass}">${statusLabel}</div>
           `;
           transactionList.appendChild(item);
         });
