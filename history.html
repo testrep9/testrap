@@ -25,17 +25,31 @@
     .transaction {
       background-color: #111;
       border-left: 5px solid #295FFF;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       padding: 15px;
-      border-radius: 5px;
+      border-radius: 8px;
+    }
+
+    .transaction.deposit {
+      border-left-color: #00c853; /* Green */
     }
 
     .transaction.withdraw {
-      border-left-color: red;
+      border-left-color: #d50000; /* Red */
+    }
+
+    .amount.deposit {
+      color: #00c853; /* Green */
+      font-weight: bold;
+    }
+
+    .amount.withdraw {
+      color: #d50000; /* Red */
+      font-weight: bold;
     }
 
     .transaction small {
-      color: #888;
+      color: #bbb;
     }
   </style>
 </head>
@@ -79,7 +93,6 @@
           return;
         }
 
-        let shown = false;
         transactionList.innerHTML = "";
 
         snapshot.forEach(doc => {
@@ -87,20 +100,19 @@
           const type = t.type?.toLowerCase();
           if (type !== "deposit" && type !== "withdraw") return;
 
+          const amount = parseFloat(t.amount).toFixed(2);
+          const currency = t.currency || "USD"; // Default to USD if not set
+          const sign = type === "deposit" ? "+" : "−";
+
           const item = document.createElement("div");
-          item.className = `transaction ${type === "withdraw" ? "withdraw" : ""}`;
+          item.className = `transaction ${type}`;
           item.innerHTML = `
-            <strong>${t.type}</strong><br>
-            <small>Amount: ${parseFloat(t.amount).toFixed(2)}</small><br>
+            <div><strong>${type.charAt(0).toUpperCase() + type.slice(1)}</strong></div>
+            <div class="amount ${type}">${sign} ${currency} ${amount}</div>
             <small>Date: ${t.timestamp?.toDate().toLocaleString()}</small>
           `;
           transactionList.appendChild(item);
-          shown = true;
         });
-
-        if (!shown) {
-          transactionList.innerHTML = "<p>No transactions yet.</p>";
-        }
 
       } catch (err) {
         console.error("Error loading transactions:", err);
